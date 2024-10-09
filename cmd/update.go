@@ -9,28 +9,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// startCmd represents the start command
-var startCmd = &cobra.Command{
-	Use:   "start <taskId>",
-	Short: "Start the specified task",
-	Long: `Start the specified task using the task id, e.g.
-	ToDoList start 1`,
+// updateCmd represents the update command
+var updateCmd = &cobra.Command{
+	Use:   "update <taskId> <task name>",
+	Short: "Update the name of a specified task",
+	Long: `Update a specific task with a new name, e.g.
+	ToDoList update 1 "Wash the car"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		taskID, _ := strconv.Atoi(args[0])
-		startTask(taskID - 1)
+		updateTask(taskID-1, args[1])
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// startCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// updateCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// updateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

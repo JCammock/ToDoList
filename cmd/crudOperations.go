@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"text/tabwriter"
+	"time"
 )
 
 type Tasks struct {
@@ -13,9 +14,11 @@ type Tasks struct {
 }
 
 type Task struct {
-	Id     int    `json:"id"`
-	Title  string `json:"title"`
-	Status string `json:"status"`
+	Id        int    `json:"id"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 func getFileData() (Tasks, error) {
@@ -71,9 +74,11 @@ func addTask(taskTitle string) {
 	tasks, _ := getFileData()
 
 	task := Task{
-		Id:     getCurrentMaxInt() + 1,
-		Title:  taskTitle,
-		Status: "Not Started",
+		Id:        getCurrentMaxInt() + 1,
+		Title:     taskTitle,
+		Status:    "todo",
+		CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
+		UpdatedAt: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	tasks.Tasks = append(tasks.Tasks, task)
@@ -129,7 +134,8 @@ func deleteTask(taskID int) {
 	listTasks()
 }
 
-func listTasks() {
+func listTasks(status ...string) {
+	fmt.Println(status)
 	tasks, err := getFileData()
 
 	if err != nil {
@@ -138,10 +144,20 @@ func listTasks() {
 
 	tabFormatting := tabwriter.NewWriter(os.Stdout, 0, 10, 1, ' ', 0)
 
-	fmt.Fprintln(tabFormatting, "|\tID\t|\tTASK\t|\tSTATUS\t|")
+	fmt.Fprintln(tabFormatting, "|\tID\t|\tTASK\t|\tSTATUS\t|\tCREATED AT\t|\tUPDATED AT\t|")
 
 	for i := 0; i < len(tasks.Tasks); i++ {
-		fmt.Fprintf(tabFormatting, "|\t%d\t|\t%s\t|\t%s\t|\n", tasks.Tasks[i].Id, tasks.Tasks[i].Title, tasks.Tasks[i].Status)
+		if tasks.Tasks[i].Status != status[0] {
+			continue
+		}
+		fmt.Fprintf(
+			tabFormatting, "|\t%d\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\n",
+			tasks.Tasks[i].Id,
+			tasks.Tasks[i].Title,
+			tasks.Tasks[i].Status,
+			tasks.Tasks[i].CreatedAt,
+			tasks.Tasks[i].UpdatedAt,
+		)
 	}
 
 	tabFormatting.Flush()
@@ -155,12 +171,48 @@ func startTask(taskID int) {
 		panic(errorMessage)
 	}
 
-	if taskID >= len(tasks.Tasks) || taskID < 1 {
+	if taskID >= len(tasks.Tasks) || taskID < 0 {
 		fmt.Println("Task does not exist")
 		return
 	}
 
-	tasks.Tasks[taskID].Status = "In Progress"
+	tasks.Tasks[taskID].Status = "in-progress"
+	tasks.Tasks[taskID].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+
+	jsonData, err := json.Marshal(tasks)
+
+	if err != nil {
+		errorMessage := fmt.Sprint("Error: ", err)
+		panic(errorMessage)
+	}
+
+	jsonFile, err := os.Create("tasks.json")
+
+	if err != nil {
+		errorMessage := fmt.Sprint("Error: ", err)
+		panic(errorMessage)
+	}
+
+	jsonFile.Write(jsonData)
+
+	listTasks()
+}
+
+func updateTask(taskID int, taskTitle string) {
+	tasks, err := getFileData()
+
+	if err != nil {
+		errorMessage := fmt.Sprint("Error: ", err)
+		panic(errorMessage)
+	}
+
+	if taskID >= len(tasks.Tasks) || taskID < 0 {
+		fmt.Println("Task does not exist")
+		return
+	}
+
+	tasks.Tasks[taskID].Title = taskTitle
+	tasks.Tasks[taskID].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 
 	jsonData, err := json.Marshal(tasks)
 
@@ -189,12 +241,13 @@ func finishTask(taskID int) {
 		panic(errorMessage)
 	}
 
-	if taskID >= len(tasks.Tasks) || taskID < 1 {
+	if taskID >= len(tasks.Tasks) || taskID < 0 {
 		fmt.Println("Task does not exist")
 		return
 	}
 
-	tasks.Tasks[taskID].Status = "Completed"
+	tasks.Tasks[taskID].Status = "done"
+	tasks.Tasks[taskID].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 
 	jsonData, err := json.Marshal(tasks)
 
